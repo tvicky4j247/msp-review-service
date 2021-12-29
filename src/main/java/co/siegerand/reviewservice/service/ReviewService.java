@@ -28,6 +28,6 @@ public interface ReviewService {
     Mono<ReviewList> getAllReviewsForBook(@PathVariable int bookId);
 
     @PostMapping(value = "/review/{id}")
-    Mono<Void> updateReview(@PathVariable(name = "id") int reviewId, @RequestBody Review review);
+    Mono<Review> updateReview(@PathVariable(name = "id") int reviewId, @RequestBody Review review);
 
 }

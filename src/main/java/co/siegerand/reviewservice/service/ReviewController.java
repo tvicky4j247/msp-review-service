@@ -80,12 +80,12 @@ public class ReviewController implements ReviewService {
     }
 
     @Override
-    public Mono<Void> updateReview(int reviewId, Review review) {
+    public Mono<Review> updateReview(int reviewId, Review review) {
 
         return repository.findById(reviewId)
                 .map(entity -> setEntityDetails(review, entity))
-                .map(repository::save)
-                .then(Mono.empty());
+                .flatMap(repository::save)
+                .map(Review::new);
     }
 
 

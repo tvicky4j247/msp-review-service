@@ -43,13 +43,20 @@ class ReviewServiceApplicationTests extends MongoDBInstance {
         Review review = new Review(reviewId, bookId, 1, "My Book", "My Test Book Content");
         
         // make request and confirm response
-        Review returnedReview = webTestClient.post()
+        webTestClient.post()
                 .uri("/review")
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(Mono.just(review), Review.class)
                 .exchange()
-                .expectStatus().isEqualTo(HttpStatus.OK)
-                .expectBody(Review.class).returnResult().getResponseBody();
+                .expectStatus().isEqualTo(HttpStatus.OK);
+
+        // confirm review added
+        Review returnedReview = webTestClient.get()
+            .uri("/review/" + reviewId)
+            .accept(MediaType.APPLICATION_JSON)
+            .exchange()
+            .expectStatus().isOk()
+            .expectBody(Review.class).returnResult().getResponseBody();
 
         Assertions.assertEquals(review.getId(), returnedReview.getId());
     }
@@ -83,22 +90,7 @@ class ReviewServiceApplicationTests extends MongoDBInstance {
 
         // create two reviews on db
         Review review1 = createReviewOnDb(reviewId1, bookId);
-        Review review2 = createReviewOnDb(reviewId2, bookId);
-
-        // add both reviews to db
-        webTestClient.post()
-            .uri("/review")
-            .accept(MediaType.APPLICATION_JSON)
-            .body(Mono.just(review1), Review.class)
-            .exchange()
-            .expectStatus().isEqualTo(HttpStatus.OK);
-
-        webTestClient.post()
-            .uri("/review")
-            .accept(MediaType.APPLICATION_JSON)
-            .body(Mono.just(review2), Review.class)
-            .exchange()
-            .expectStatus().isOk();
+        createReviewOnDb(reviewId2, bookId);
 
         // retrieve all reviews for bookId 1 and confirm there are two
         ReviewList reviewList = webTestClient.get()
@@ -164,6 +156,34 @@ class ReviewServiceApplicationTests extends MongoDBInstance {
             .accept(MediaType.APPLICATION_JSON)
             .exchange()
             .expectStatus().isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
+    @Test
+    void updateReview() {
+        int bookId = 1;
+        int reviewId = 2;
+
+        createReviewOnDb(reviewId, bookId);
+
+        // create new review
+        String newBookContent = "New Book Content";
+        Review newReview = new Review(reviewId, bookId, 1, "Book Title", newBookContent);
+
+        // call update api
+        webTestClient.post()
+            .uri("/review/" + reviewId)
+            .accept(MediaType.APPLICATION_JSON)
+            .bodyValue(newReview)
+            .exchange()
+            .expectStatus().isOk();
+
+        // verify update
+        Review returnedReview = webTestClient.get()
+            .uri("/review/" + reviewId)
+            .exchange()
+            .expectBody(Review.class).returnResult().getResponseBody();
+
+        Assertions.assertEquals(newReview, returnedReview);
     }
 
     Review createReviewOnDb(int reviewId, int bookId) {
