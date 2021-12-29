@@ -74,6 +74,7 @@ public class ReviewController implements ReviewService {
 
         return repository.findAllByBookId(bookId)
                 .log(LOG.getName(), Level.FINE)
+                .switchIfEmpty(Mono.error(new NotFoundException("No reviews found for book id: " + bookId)))
                 .collectList()
                 .map(e -> new ReviewList(serviceAddress, e.stream().map(Review::new).collect(Collectors.toList())));
     }
