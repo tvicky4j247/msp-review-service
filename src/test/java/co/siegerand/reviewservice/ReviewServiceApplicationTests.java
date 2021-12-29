@@ -17,7 +17,8 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Mono;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, 
+                properties = {"eureka.client.enabled=false"})
 class ReviewServiceApplicationTests extends MongoDBInstance {
 
     private final ReviewRepository repository;
@@ -40,13 +41,17 @@ class ReviewServiceApplicationTests extends MongoDBInstance {
         int reviewId = 1;
 
         Review review = new Review(reviewId, bookId, 1, "My Book", "My Test Book Content");
-        webTestClient.post()
+        
+        // make request and confirm response
+        Review returnedReview = webTestClient.post()
                 .uri("/review")
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(Mono.just(review), Review.class)
                 .exchange()
                 .expectStatus().isEqualTo(HttpStatus.OK)
-                .expectBody().jsonPath("$.bookId", 1);
+                .expectBody(Review.class).returnResult().getResponseBody();
+
+        Assertions.assertEquals(review.getId(), returnedReview.getId());
     }
 
     @Test
@@ -106,6 +111,15 @@ class ReviewServiceApplicationTests extends MongoDBInstance {
         Assertions.assertEquals(2, reviewList.getReviewCount());
         Collections.sort(reviewList.getReviews(), ((a, b) -> a.getId() < b.getId() ? 0 : 1));
         Assertions.assertEquals(review1, reviewList.getReviews().get(0));
+    }
+
+    @Test
+    void getReviewFail() {
+        // attempt to get non-existent review from service. Expect 404
+        webTestClient.get()
+            .uri("/review/" + 1)
+            .exchange()
+            .expectStatus().isEqualTo(HttpStatus.NOT_FOUND);
     }
 
     Review createReviewOnDb(int reviewId, int bookId) {
