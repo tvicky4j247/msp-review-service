@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice
@@ -14,11 +15,13 @@ public class GlobalExceptionHandler {
 
     private final Logger LOG = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
+    @ResponseStatus(code = HttpStatus.UNPROCESSABLE_ENTITY)
     @ExceptionHandler(InvalidInputException.class)
     public @ResponseBody HttpErrorInfo handleInvalidInputErrors(ServerHttpRequest request, InvalidInputException ex) {
         return createHttpErrorInfo(HttpStatus.UNPROCESSABLE_ENTITY, request, ex);
     }
 
+    @ResponseStatus(code = HttpStatus.NOT_FOUND)
     @ExceptionHandler(NotFoundException.class)
     public @ResponseBody HttpErrorInfo handleNotFoundErrors(ServerHttpRequest request, NotFoundException ex) {
         return createHttpErrorInfo(HttpStatus.NOT_FOUND, request, ex);
