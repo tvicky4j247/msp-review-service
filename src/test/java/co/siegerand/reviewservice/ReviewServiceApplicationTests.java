@@ -122,6 +122,50 @@ class ReviewServiceApplicationTests extends MongoDBInstance {
             .expectStatus().isEqualTo(HttpStatus.NOT_FOUND);
     }
 
+    @Test
+    void deleteReview() {
+
+        int reviewId = 1;
+        int bookId = 1;
+
+        // create review
+        createReviewOnDb(reviewId, bookId);
+
+        // delete review
+        webTestClient.delete()
+            .uri("/review/" + reviewId)
+            .exchange()
+            .expectStatus().isOk();
+
+        // confirm delete
+        webTestClient.get()
+            .uri("/review/" + reviewId)
+            .exchange()
+            .expectStatus().isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
+    @Test
+    void deleteAllReviewsForBook() {
+        int bookId = 1;
+        
+        // create multiple book reviews
+        createReviewOnDb(1, bookId);
+        createReviewOnDb(2, bookId);
+
+        // delete reviews
+        webTestClient.delete()
+            .uri("/review/all/" + bookId)
+            .exchange()
+            .expectStatus().isOk();
+
+        // confirm deletion
+        webTestClient.get()
+            .uri("/review/all/" + bookId)
+            .accept(MediaType.APPLICATION_JSON)
+            .exchange()
+            .expectStatus().isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
     Review createReviewOnDb(int reviewId, int bookId) {
         return new Review(repository.save(new ReviewEntity(reviewId, bookId, 1, "Book Title", "Book Content"))
                 .block());
